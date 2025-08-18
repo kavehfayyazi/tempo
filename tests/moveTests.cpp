@@ -18,11 +18,11 @@ TEST_CASE("Knight move") {
     REQUIRE(Move::to(m) == to);
     REQUIRE_FALSE(Move::isCapture(m));
     REQUIRE_FALSE(Move::isCastle(m));
-    REQUIRE_FALSE(Move::isDoublePawnPush(m));
-    REQUIRE_FALSE(Move::isEnPassant(m));
-    REQUIRE(Move::promo(m) == Promo::None);
-    REQUIRE(Move::movedPiece(m) == Piece::WN);
-    REQUIRE(Move::capturedPiece(m) == Piece::None);
+    REQUIRE_FALSE(Move::isDPP(m));
+    REQUIRE_FALSE(Move::isEP(m));
+    REQUIRE(Move::promo(m) == to_u(Promo::None));
+    REQUIRE(Move::movedCode(m) == to_u(Piece::WN));
+    REQUIRE(Move::capturedCode(m) == to_u(Piece::None));
 
     // only 27 bits used
     REQUIRE((m >> 27) == 0);

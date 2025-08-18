@@ -17,7 +17,7 @@ struct Move {
     // 17:      castle flag
     // 18:      double pawn push flag
     // 19:      en passant capture flag
-    // 20-22:   promo [0,4], 0 means None
+    // 20-22:   promo [0,4], 0x7 means None
     // 23-26:   captured piece [0,11], 0xF means None
 
     static constexpr uint8_t SQUARE_MASK = 0x3F;
@@ -44,19 +44,18 @@ struct Move {
     // isDPP = is double pawn push
     // isEP = is en passant
     static inline uint32_t make(uint8_t from, uint8_t to, Piece moved,
-                         bool isCaptured, bool isCastled, bool isDPP, bool isEP,
-                         Piece capturedPiece =  Piece::None, Promo promoted = Promo::None)
-    {
+                                bool isCaptured, bool isCastled, bool isDPP, bool isEP,
+                                Piece capturedPiece = Piece::None, Promo promoted = Promo::None) {
         const uint32_t movedCode = static_cast<uint32_t>(moved) & PIECE_MASK;
         const uint32_t capturedCode = static_cast<uint32_t>(capturedPiece) & PIECE_MASK;
         const uint32_t promoCode = static_cast<uint32_t>(promoted) & PROMO_MASK;
 
         uint64_t move{0};
         move = ((uint32_t(from) & SQUARE_MASK) << FROM_SHIFT)
-             | ((uint32_t(to) & SQUARE_MASK) << TO_SHIFT)
-             | (movedCode << MOVED_SHIFT)
-             | (promoCode << PROMO_SHIFT)
-             | (capturedCode << CAPTURE_SHIFT);
+               | ((uint32_t(to) & SQUARE_MASK) << TO_SHIFT)
+               | (movedCode << MOVED_SHIFT)
+               | (promoCode << PROMO_SHIFT)
+               | (capturedCode << CAPTURE_SHIFT);
 
         if (isCaptured) move |= CAPTURED_FLAG;
         if (isCastled) move |= CASTLE_FLAG;
@@ -66,23 +65,15 @@ struct Move {
         return move;
     }
 
-    static inline uint8_t from(uint64_t move)               { return (move >> FROM_SHIFT) & SQUARE_MASK; }
-    static inline uint8_t to(uint64_t move)                 { return (move >> TO_SHIFT) & SQUARE_MASK; }
-    static inline bool    isCapture(uint64_t move)          { return move & CAPTURED_FLAG; }
-    static inline bool    isCastle(uint64_t move)           { return move & CASTLE_FLAG; }
-    static inline bool    isDoublePawnPush(uint64_t move)   { return move & PAWN_DOUBLE_MOVE_FLAG; }
-    static inline bool    isEnPassant(uint64_t move)        { return move & EN_PASSANT_FLAG; }
-    static inline Promo   promo(uint64_t move)              { return static_cast<Promo>((move >> PROMO_SHIFT) & PROMO_MASK); }
-
-    // 0xF -> Piece::None
-    static inline Piece   movedPiece(uint32_t move) {
-        uint8_t code = (move >> MOVED_SHIFT) & PIECE_MASK;
-        return code == 0xF ? Piece::None : static_cast<Piece>(code);
-    }
-    static inline Piece   capturedPiece(uint32_t move) {
-        uint8_t code = (move >> CAPTURE_SHIFT) & PIECE_MASK;
-        return code == 0xF ? Piece::None : static_cast<Piece>(code);
-    }
+    static inline uint8_t from (uint32_t move) { return (move >> FROM_SHIFT) & SQUARE_MASK; }
+    static inline uint8_t to (uint32_t move) { return (move >> TO_SHIFT) & SQUARE_MASK; }
+    static inline uint8_t movedCode (uint32_t move) { return (move >> MOVED_SHIFT) & PIECE_MASK; }// 0xF -> Piece::None
+    static inline bool isCapture (uint32_t move) { return move & CAPTURED_FLAG; }
+    static inline bool isCastle (uint32_t move) { return move & CASTLE_FLAG; }
+    static inline bool isDPP (uint32_t move) { return move & PAWN_DOUBLE_MOVE_FLAG; }
+    static inline bool isEP (uint32_t move) { return move & EN_PASSANT_FLAG; }
+    static inline uint8_t promo (uint32_t move) { return (move >> PROMO_SHIFT) & PROMO_MASK; } // 0x7 -> Promo::None
+    static inline uint8_t capturedCode (uint32_t move) { return (move >> CAPTURE_SHIFT) & PIECE_MASK; } // 0xF -> Piece::None
 };
 
 #endif //TEMPO_MOVE_H
