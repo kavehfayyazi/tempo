@@ -4,6 +4,7 @@
 
 #include "catch.hpp"
 #include "types.h"
+#include "utils.h"
 
 static_assert(std::is_same_v<decltype(to_u(Piece::WP)), std::underlying_type_t<Piece>>);
 static_assert(std::is_same_v<decltype(to_u(Castling::W_K)), std::underlying_type_t<Castling>>);
@@ -15,13 +16,13 @@ static_assert(to_u(Piece::WK) == 5);
 static_assert(to_u(Piece::BP) == 6);
 static_assert(to_u(Piece::BK) == 11);
 static_assert(to_u(Piece::PIECE_N) == 12);
-static_assert(to_u(Piece::None) == 0xFF);
+static_assert(to_u(Piece::None) == 0xF);
 
-static_assert(to_u(Promo::None) == 0);
-static_assert(to_u(Promo::R) == 1);
-static_assert(to_u(Promo::N) == 2);
-static_assert(to_u(Promo::B) == 3);
-static_assert(to_u(Promo::Q) == 4);
+static_assert(to_u(Promo::R) == 0);
+static_assert(to_u(Promo::N) == 1);
+static_assert(to_u(Promo::B) == 2);
+static_assert(to_u(Promo::Q) == 3);
+static_assert(to_u(Promo::None) == 0xF);
 
 static_assert(to_u(Castling::None) == 0);
 static_assert(to_u(Castling::W_K) == 0b0001);
@@ -64,8 +65,8 @@ TEST_CASE("to_u makes castling bitmasks easy") {
 TEST_CASE("to_u values are the expected underlying codes") {
     REQUIRE(to_u(Piece::WQ) == 4);
     REQUIRE(to_u(Piece::BK) == 11);
-    REQUIRE(to_u(Promo::None) == 0);
-    REQUIRE(to_u(Promo::Q) == 4);
+    REQUIRE(to_u(Promo::None) == 0xF);
+    REQUIRE(to_u(Promo::Q) == 3);
     REQUIRE(to_u(Castling::None) == 0);
     REQUIRE(to_u(Castling::B_Q) == 8);
 }

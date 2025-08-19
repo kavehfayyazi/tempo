@@ -116,8 +116,7 @@ uint64_t scanAttacks(const Bitboards& bb, int8_t sq, Piece piece, uint64_t occAl
         int8_t nextSq = sq;
         for (size_t step = 0; step < maxSteps; ++step) {
             nextSq += DELTAS[i];
-            if (!squareInBoard(nextSq) ||
-                abs(fileOf(nextSq) - fileOf(prevSq)) != dx) break; // out of bounds
+            if (!squareInBoard(nextSq) || wrapped(prevSq, nextSq, DELTAS[i])) break; // out of bounds
             if (bb[to_u(piece)] & (1ULL << nextSq)) {// piece occupies this square
                 attacksByPiece |= (1ULL << nextSq);
                 break;
@@ -131,19 +130,14 @@ uint64_t scanAttacks(const Bitboards& bb, int8_t sq, Piece piece, uint64_t occAl
 }
 
 bool isSquareAttacked(Bitboards& bb, uint8_t sq, bool meWhite, uint64_t occAll) {
-    return
-        scanRays(bb, sq, getEnemyPawn(meWhite), occAll) ||
-        scanRays(bb, sq, getEnemyRook(meWhite), occAll) ||
-        scanRays(bb, sq, getEnemyKnight(meWhite), occAll) ||
-        scanRays(bb, sq, getEnemyBishop(meWhite), occAll) ||
-        scanRays(bb, sq, getEnemyQueen(meWhite), occAll) ||
-        scanRays(bb, sq, getEnemyKing(meWhite), occAll);
+    return attackersTo(bb, sq, meWhite, occAll) != 0;
 }
 
 uint64_t attackersTo(Bitboards& bb, uint8_t kingSq, bool meWhite, uint64_t occAll) {
-    return scanAttacks(bb, kingSq, getEnemyPawn(meWhite), occAll) |
-           scanAttacks(bb, kingSq, getEnemyRook(meWhite), occAll) |
-           scanAttacks(bb, kingSq, getEnemyKnight(meWhite), occAll) |
-           scanAttacks(bb, kingSq, getEnemyBishop(meWhite), occAll) |
-           scanAttacks(bb, kingSq, getEnemyQueen(meWhite), occAll);
+    return scanAttacks(bb, kingSq, getEnemyPawn(meWhite),   occAll)
+         | scanAttacks(bb, kingSq, getEnemyRook(meWhite),   occAll)
+         | scanAttacks(bb, kingSq, getEnemyKnight(meWhite), occAll)
+         | scanAttacks(bb, kingSq, getEnemyBishop(meWhite), occAll)
+         | scanAttacks(bb, kingSq, getEnemyQueen(meWhite),  occAll)
+         | scanAttacks(bb, kingSq, getEnemyKing(meWhite),   occAll);
 }

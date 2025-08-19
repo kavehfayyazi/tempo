@@ -58,7 +58,8 @@ public:
 public:
     void move(uint32_t move);
     void undoMove(uint32_t move);
-    MoveList genLegalMoves();
+    void genLegalMoves(MoveList& out);
+    uint64_t getKey();
     Board();
 };
 

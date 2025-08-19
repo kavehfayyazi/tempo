@@ -6,10 +6,6 @@
 #include "types.h"
 #include "move.h"
 
-TEST_CASE("Promo::None is zero") {
-    REQUIRE(static_cast<uint8_t>(Promo::None) == 0);
-}
-
 TEST_CASE("Knight move") {
     const uint8_t from = 12, to = 28;
     auto m = Move::make(from, to, Piece::WN, false, false, false, false);
@@ -20,7 +16,7 @@ TEST_CASE("Knight move") {
     REQUIRE_FALSE(Move::isCastle(m));
     REQUIRE_FALSE(Move::isDPP(m));
     REQUIRE_FALSE(Move::isEP(m));
-    REQUIRE(Move::promo(m) == to_u(Promo::None));
+    REQUIRE(Move::promo(m) == 0x07);
     REQUIRE(Move::movedCode(m) == to_u(Piece::WN));
     REQUIRE(Move::capturedCode(m) == to_u(Piece::None));
 
@@ -37,11 +33,11 @@ TEST_CASE("Capture move encodes piece and flag") {
     REQUIRE(Move::to(m) == to);
     REQUIRE(Move::isCapture(m));
     REQUIRE_FALSE(Move::isCastle(m));
-    REQUIRE_FALSE(Move::isDoublePawnPush(m));
-    REQUIRE_FALSE(Move::isEnPassant(m));
-    REQUIRE(Move::promo(m) == Promo::None);
-    REQUIRE(Move::movedPiece(m) == Piece::WP);
-    REQUIRE(Move::capturedPiece(m) == Piece::BN);
+    REQUIRE_FALSE(Move::isDPP(m));
+    REQUIRE_FALSE(Move::isEP(m));
+    REQUIRE(Move::promo(m) == 0x07);
+    REQUIRE(Move::movedCode(m) == to_u(Piece::WP));
+    REQUIRE(Move::capturedCode(m) == to_u(Piece::BN));
 }
 
 TEST_CASE("Double pawn push sets DPP only") {
@@ -52,9 +48,9 @@ TEST_CASE("Double pawn push sets DPP only") {
     REQUIRE(Move::to(m) == 28);
     REQUIRE_FALSE(Move::isCapture(m));
     REQUIRE_FALSE(Move::isCastle(m));
-    REQUIRE(Move::isDoublePawnPush(m));
-    REQUIRE_FALSE(Move::isEnPassant(m));
-    REQUIRE(Move::promo(m) == Promo::None);
+    REQUIRE(Move::isDPP(m));
+    REQUIRE_FALSE(Move::isEP(m));
+    REQUIRE(Move::promo(m) == 0x07); // Promo::None is represented by 0x07
 }
 
 TEST_CASE("En passant capture sets EP and capture, captured piece is pawn") {
@@ -62,10 +58,10 @@ TEST_CASE("En passant capture sets EP and capture, captured piece is pawn") {
     auto m = Move::make(36, 43, Piece::WP, true, false, false, true, Piece::BP);
 
     REQUIRE(Move::isCapture(m));
-    REQUIRE(Move::isEnPassant(m));
+    REQUIRE(Move::isEP(m));
     REQUIRE_FALSE(Move::isCastle(m));
-    REQUIRE_FALSE(Move::isDoublePawnPush(m));
-    REQUIRE(Move::capturedPiece(m) == Piece::BP);
+    REQUIRE_FALSE(Move::isDPP(m));
+    REQUIRE(Move::capturedCode(m) == to_u(Piece::BP));
 }
 
 TEST_CASE("Promotion without capture") {
@@ -75,9 +71,9 @@ TEST_CASE("Promotion without capture") {
     REQUIRE(Move::from(m) == 48);
     REQUIRE(Move::to(m) == 56);
     REQUIRE_FALSE(Move::isCapture(m));
-    REQUIRE(Move::promo(m) == Promo::Q);
-    REQUIRE(Move::movedPiece(m) == Piece::WP);
-    REQUIRE(Move::capturedPiece(m) == Piece::None);
+    REQUIRE(Move::promo(m) == to_u(Promo::Q));
+    REQUIRE(Move::movedCode(m) == to_u(Piece::WP));
+    REQUIRE(Move::capturedCode(m) == to_u(Piece::None));
 }
 
 TEST_CASE("Promotion with capture") {
@@ -85,8 +81,8 @@ TEST_CASE("Promotion with capture") {
     auto m = Move::make(49, 56, Piece::WP, true, false, false, false, Piece::BR, Promo::N);
 
     REQUIRE(Move::isCapture(m));
-    REQUIRE(Move::promo(m) == Promo::N);
-    REQUIRE(Move::capturedPiece(m) == Piece::BR);
+    REQUIRE(Move::promo(m) == to_u(Promo::N));
+    REQUIRE(Move::capturedCode(m) == to_u(Piece::BR));
 }
 
 TEST_CASE("Castle flag set correctly") {
@@ -95,16 +91,16 @@ TEST_CASE("Castle flag set correctly") {
 
     REQUIRE_FALSE(Move::isCapture(m));
     REQUIRE(Move::isCastle(m));
-    REQUIRE_FALSE(Move::isDoublePawnPush(m));
-    REQUIRE_FALSE(Move::isEnPassant(m));
-    REQUIRE(Move::movedPiece(m) == Piece::WK);
+    REQUIRE_FALSE(Move::isDPP(m));
+    REQUIRE_FALSE(Move::isEP(m));
+    REQUIRE(Move::movedCode(m) == to_u(Piece::WK));
 }
 
 TEST_CASE("No captured piece decodes to None") {
     auto m = Move::make(10, 18, Piece::WB, false, false, false, false);
 
     REQUIRE_FALSE(Move::isCapture(m));
-    REQUIRE(Move::capturedPiece(m) == Piece::None);
+    REQUIRE(Move::capturedCode(m) == to_u(Piece::None));
 }
 
 TEST_CASE("Edge squares") {
@@ -113,7 +109,7 @@ TEST_CASE("Edge squares") {
 
     REQUIRE(Move::from(m) == 63);
     REQUIRE(Move::to(m) == 0);
-    REQUIRE(Move::movedPiece(m) == Piece::BK);
+    REQUIRE(Move::movedCode(m) == to_u(Piece::BK));
     REQUIRE_FALSE(Move::isCapture(m));
-    REQUIRE(Move::promo(m) == Promo::None);
+    REQUIRE(Move::promo(m) == 0x07);
 }

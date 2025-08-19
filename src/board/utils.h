@@ -6,6 +6,7 @@
 #define TEMPO_UTILS_H
 
 #include "types.h"
+#include "utils.h"
 #include <random>
 #include <type_traits>
 #include <stdexcept>
@@ -13,6 +14,37 @@
 static uint64_t random_u64() {
     static std::mt19937_64 rng(std::random_device{}());
     return rng();
+}
+
+
+// delta ∈ {+1,-1,+8,-8,+9,-9,+7,-7}
+inline constexpr bool stepFromDelta(int8_t delta, int8_t& dx, int8_t& dy) {
+    switch (delta) {
+        case +1: dx = +1; dy = 0;  return true;
+        case -1: dx = -1; dy = 0;  return true;
+        case +8: dx = 0;  dy = +1; return true;
+        case -8: dx = 0;  dy = -1; return true;
+        case +9: dx = +1; dy = +1; return true;
+        case -9: dx = -1; dy = -1; return true;
+        case +7: dx = -1; dy = +1; return true;
+        case -7: dx = +1; dy = -1; return true;
+        default: dx = 0;  dy = 0;  return false; // invalid
+    }
+}
+
+// delta ∈ {+1,-1,+8,-8,+9,-9,+7,-7}
+inline constexpr int8_t dxStepFromDelta(int8_t delta) {
+    switch (delta) {
+        case +1: return +1;
+        case -1: return -1;
+        case +8: return 0;
+        case -8: return 0;
+        case +9: return +1;
+        case -9: return -1;
+        case +7: return -1;
+        case -7: return +1;
+        default: throw std::invalid_argument("Invalid delta.");
+    }
 }
 
 using Bitboards = std::array<uint64_t, 12>;
@@ -40,6 +72,9 @@ inline bool firstTwoRanks(uint8_t square, bool meWhite) {
     if (meWhite) return square < NUM_SQUARES_IN_ROW * 2;
     else return square >= NUM_SQUARES - NUM_SQUARES_IN_ROW * 2;
 }
+
+// for file checking
+inline bool wrapped(uint8_t prev, uint8_t next, int8_t delta) { return std::abs(int(fileOf(next)) - int(fileOf(prev))) != std::abs(dxStepFromDelta(delta)); }
 
 inline bool isWhite(Piece piece) { return to_u(piece) <= to_u(Piece::WK); }
 inline bool isBlack(Piece piece) { return to_u(piece) >= to_u(Piece::BP) && to_u(piece) <= to_u(Piece::BK); }
@@ -78,8 +113,10 @@ inline bool pawnMoveFromPromotion(uint8_t sq, bool meWhite) {
 inline uint64_t getKingMoves(uint8_t kingSq) {
     uint64_t moves = 0;
     for (uint8_t i = 0; i < NUM_KING_DELTAS; ++i) {
-        int8_t nextSq = int8_t(kingSq) + KING_DELTAS[i];
-        if (squareInBoard(nextSq)) moves |= (1ULL << nextSq);
+        int8_t d = KING_DELTAS[i];
+        int8_t to = int8_t(kingSq) + d;
+        if (!squareInBoard(to) || wrapped(kingSq, to, d)) continue;
+        moves |= (1ULL << to);
     }
     return moves;
 }
@@ -95,36 +132,6 @@ const uint8_t
         f1 = sq(2, 0), f8 = sq(2, 7),
         g1 = sq(1, 0), g8 = sq(1, 7),
         h1 = sq(0, 0), h8 = sq(0, 7);
-
-// delta ∈ {+1,-1,+8,-8,+9,-9,+7,-7}
-inline constexpr bool stepFromDelta(int8_t delta, int8_t& dx, int8_t& dy) {
-    switch (delta) {
-        case +1: dx = +1; dy = 0;  return true;
-        case -1: dx = -1; dy = 0;  return true;
-        case +8: dx = 0;  dy = +1; return true;
-        case -8: dx = 0;  dy = -1; return true;
-        case +9: dx = +1; dy = +1; return true;
-        case -9: dx = -1; dy = -1; return true;
-        case +7: dx = -1; dy = +1; return true;
-        case -7: dx = +1; dy = -1; return true;
-        default: dx = 0;  dy = 0;  return false; // invalid
-    }
-}
-
-// delta ∈ {+1,-1,+8,-8,+9,-9,+7,-7}
-inline constexpr int8_t dxStepFromDelta(int8_t delta) {
-    switch (delta) {
-        case +1: return +1;
-        case -1: return -1;
-        case +8: return 0;
-        case -8: return 0;
-        case +9: return +1;
-        case -9: return -1;
-        case +7: return -1;
-        case -7: return +1;
-        default: throw std::invalid_argument("Invalid delta.");
-    }
-}
 
 // rooks, bishops, and queens
 // excluding sq1 and sq2, squares in between
@@ -151,9 +158,6 @@ inline constexpr uint64_t rayBetween(int8_t sq1, int8_t sq2) {
     }
     return mask;
 }
-
-// for file checking
-inline bool wrapped(uint8_t prev, uint8_t next, int8_t delta) { return std::abs(int(fileOf(next)) - int(fileOf(prev))) != std::abs(dxStepFromDelta(delta)); }
 
 inline bool knightHopValid(uint8_t from, uint8_t to) {
     auto df = std::abs(int(fileOf(to))  - int(fileOf(from)));

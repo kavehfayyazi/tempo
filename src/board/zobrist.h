@@ -52,7 +52,7 @@ public:
         }())
     {}
 
-    uint32_t getKey() const { return key; };
+    uint64_t getKey() const { return key; };
 };
 
 #endif //TEMPO_ZOBRIST_H

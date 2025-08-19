@@ -5,6 +5,7 @@
 #include "attacks.h"
 #include "push.h"
 #include "movegen.h"
+#include <iostream>
 #include "types.h"
 #include <bit>
 #include <vector>
@@ -46,6 +47,7 @@ void MoveGen::genPawnMovesFor(MoveList& out, Piece pawn) const {
     const uint8_t seventhRank = meWhite ? SEVENTH_RANK : SECOND_RANK;
     const uint8_t sixthRank = meWhite ? SIXTH_RANK : THIRD_RANK;
     const uint8_t secondRank = meWhite ? SECOND_RANK : SEVENTH_RANK;
+    const uint8_t epRank = meWhite ? FIFTH_RANK : FOURTH_RANK;
     const uint8_t leftFile = meWhite ? A_FILE : H_FILE;
     const uint8_t rightFile = meWhite ? H_FILE : A_FILE;
     const int8_t leftSQdx = meWhite ? 1 : - 1;
@@ -76,14 +78,14 @@ void MoveGen::genPawnMovesFor(MoveList& out, Piece pawn) const {
                  pushCapture(out, square, square + FWD + rightSQdx, pawn, enemyPieceAt(bb, square + FWD + rightSQdx, meWhite));
 
         // En Passant
-        if (squareInRank(square, sixthRank)) {
-            Piece otherPawn = (pawn == Piece::WP) ? Piece::BP : Piece::WP;
+        if (squareInRank(square, epRank)) {
+            Piece otherPawn = getOtherPiece(pawn);
             if (fileOf(square) != leftFile &&
                 epSquare == square + FWD + leftSQdx) // Left
-                pushCapture(out, square, square + FWD + leftSQdx, pawn, otherPawn);
+                pushCapture(out, square, square + FWD + leftSQdx, pawn, otherPawn, true);
             if (fileOf(square) != rightFile &&
                 epSquare == square + FWD + rightSQdx) // Left
-                pushCapture(out, square, square + FWD + rightSQdx, pawn, otherPawn);
+                pushCapture(out, square, square + FWD + rightSQdx, pawn, otherPawn, true);
         }
 
         // Any forward push (includes double pawn push)
@@ -109,8 +111,9 @@ void MoveGen::genKnightMovesFor(MoveList& out, Piece knight) const {
     forEachSetBit(bb[to_u(knight)], [&](uint8_t from) {
         for(size_t i = 0; i < KNIGHT_DELTAS.size(); ++i) {
             int8_t to = from + KNIGHT_DELTAS[i];
-            if (squareInBoard(to) && knightHopValid(from, to)) continue;
-                pushQuietOrCapture(out, bb, from, to, knight, occAll);
+            if (!squareInBoard(to) || !knightHopValid(from, to)) continue;
+            if (getOcc(false, isWhite(knight)) & (1ULL << to)) continue;
+            pushQuietOrCapture(out, bb, from, to, knight, occAll);
         }
     });
 }
@@ -268,12 +271,12 @@ void MoveGen::genQuietBlocks(MoveList& out, uint64_t mask) const {
 }
 
 void MoveGen::genEPBlock(MoveList& out, uint64_t mask) const {
+    if (epSquare == NUM_SQUARES) return;
     Piece ourPawn = getOurPawn(whiteToMove);
-    uint8_t epSq = (whiteToMove ? epSquare + NUM_SQUARES_IN_ROW
-                                : epSquare - NUM_SQUARES_IN_ROW);
+    uint8_t epSq = epSquare; // landing square of pawn
     uint64_t ourEPpawns = scanAttacks(bb, epSq, ourPawn, occAll);
     forEachSetBit(ourEPpawns, [&](uint8_t from) {
-        if (epSq & mask) pushQuiet(out, from, epSq, ourPawn);
+        if ((1ULL << epSq) & mask) pushCapture(out, from, epSq, ourPawn, getOtherPiece(ourPawn), true);
     });
 }
 

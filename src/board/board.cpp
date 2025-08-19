@@ -6,6 +6,7 @@
 #include "board.h"
 #include "utils.h"
 #include "movegen.h"
+#include "move.h"
 #include "types.h"
 #include <iostream>
 #include <queue>
@@ -76,8 +77,8 @@ void Board::move(uint32_t move) {
         const uint8_t fTo = fileOf(to);
         bool kingSide = (fTo < fFrom);
 
-        const uint8_t rookFromSq = sq(kingSide ? (fTo - 1) : (fTo + 2), r);
-        const uint8_t rookToSq   = sq(kingSide ? (fTo + 1) : (fTo - 1), r);
+        const uint8_t rookFromSq = sq(fTo + (kingSide ? -1 : +2), r);
+        const uint8_t rookToSq   = sq(fTo + (kingSide ? +1 : -1), r);
         const auto rookCode = isWhite(static_cast<Piece>(movedCode)) ? to_u(WR) : to_u(BR);
 
         key ^= zobrist.pieces[rookCode][rookFromSq];
@@ -199,7 +200,7 @@ void Board::undoMove(uint32_t move) {
     calcOcc();
 }
 
-MoveList Board::genLegalMoves() {
+void Board::genLegalMoves(MoveList& out) {
     MoveList moves;
     moves.reserve(218); // Maximum number of pseudolegal moves for a single turn in chess
 
@@ -208,7 +209,7 @@ MoveList Board::genLegalMoves() {
         movegen.genEvasions(moves, kingSq);
     else movegen.genPseudoMoves(moves);
 
-    MoveList out;
+    out.clear();
     out.reserve(moves.size());
 
     for (auto m : moves) {
@@ -219,8 +220,9 @@ MoveList Board::genLegalMoves() {
             out.push_back(m);
         undoMove(m);
     }
-    return out;
 }
+
+uint64_t Board::getKey() { return key; }
 
 Board::Board() :
         bb{},

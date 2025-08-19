@@ -16,12 +16,13 @@ inline void pushQuiet (std::vector<uint32_t> &out, uint8_t from, uint8_t to, Pie
     out.emplace_back(Move::make(from, to, moved, false, isCastle, isDPP, false));
 }
 
-inline void pushCapture (std::vector<uint32_t> &out, uint8_t from, uint8_t to, Piece moved, Piece captured) {
-    out.emplace_back(Move::make(from, to, moved, true, false, false, false, captured));
+inline void pushCapture (std::vector<uint32_t> &out, uint8_t from, uint8_t to, Piece moved, Piece captured, bool isEP=false) {
+    if (isEP) out.emplace_back(Move::make(from, to, moved, true, false, false, true, captured));
+    else out.emplace_back(Move::make(from, to, moved, true, false, false, false, captured));
 }
 
 // capture = true
-bool pushQuietOrCapture (std::vector<uint32_t>& out, Bitboards& bb, uint8_t from, uint8_t to, Piece moved, uint64_t occAll, bool isRook=false) {
+bool pushQuietOrCapture (std::vector<uint32_t>& out, Bitboards& bb, uint8_t from, uint8_t to, Piece moved, uint64_t occAll) {
     if (!occupied(occAll, to)) { // space empty
         pushQuiet(out, from, to, moved);
         return false;
